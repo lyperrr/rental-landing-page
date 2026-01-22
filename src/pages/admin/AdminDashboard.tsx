@@ -4,13 +4,29 @@ import { supabase } from '@/integrations/supabase/client';
 import { motion } from 'framer-motion';
 import { 
   Car, Users, Calendar, DollarSign, TrendingUp, ArrowUpRight,
-  ArrowDownRight, BarChart3, Settings, LogOut, Menu, X
+  ArrowDownRight, BarChart3, Settings, LogOut, Menu, X, Activity, Clock
 } from 'lucide-react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
+import { format, subDays, startOfMonth, endOfMonth } from 'date-fns';
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
+} from 'recharts';
 
 const AdminDashboard = () => {
   const { signOut } = useAuth();
@@ -30,6 +46,48 @@ const AdminDashboard = () => {
       const totalRevenue = bookingsRes.data?.reduce((sum, b) => sum + Number(b.total_price), 0) || 0;
       const completedBookings = bookingsRes.data?.filter(b => b.status === 'completed').length || 0;
       const pendingBookings = bookingsRes.data?.filter(b => b.status === 'pending').length || 0;
+      const activeBookings = bookingsRes.data?.filter(b => b.status === 'active').length || 0;
+      const confirmedBookings = bookingsRes.data?.filter(b => b.status === 'confirmed').length || 0;
+      const cancelledBookings = bookingsRes.data?.filter(b => b.status === 'cancelled').length || 0;
+      const paidBookings = bookingsRes.data?.filter(b => b.payment_status === 'paid').length || 0;
+
+      // Generate revenue data for the last 7 days
+      const revenueData = [];
+      for (let i = 6; i >= 0; i--) {
+        const date = subDays(new Date(), i);
+        const dateStr = format(date, 'yyyy-MM-dd');
+        const dayRevenue = bookingsRes.data?.filter(b => 
+          format(new Date(b.created_at), 'yyyy-MM-dd') === dateStr
+        ).reduce((sum, b) => sum + Number(b.total_price), 0) || 0;
+        
+        revenueData.push({
+          date: format(date, 'EEE'),
+          revenue: dayRevenue,
+          bookings: bookingsRes.data?.filter(b => 
+            format(new Date(b.created_at), 'yyyy-MM-dd') === dateStr
+          ).length || 0,
+        });
+      }
+
+      // Booking status distribution
+      const bookingStatusData = [
+        { name: 'Pending', value: pendingBookings, color: '#f59e0b' },
+        { name: 'Confirmed', value: confirmedBookings, color: '#3b82f6' },
+        { name: 'Active', value: activeBookings, color: '#10b981' },
+        { name: 'Completed', value: completedBookings, color: '#6b7280' },
+        { name: 'Cancelled', value: cancelledBookings, color: '#ef4444' },
+      ].filter(item => item.value > 0);
+
+      // Car categories distribution
+      const categories = carsRes.data?.reduce((acc, car) => {
+        acc[car.category] = (acc[car.category] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>) || {};
+
+      const categoryData = Object.entries(categories).map(([name, value]) => ({
+        name,
+        value,
+      }));
 
       return {
         totalCars: carsRes.count || 0,
@@ -38,7 +96,31 @@ const AdminDashboard = () => {
         totalRevenue,
         completedBookings,
         pendingBookings,
+        activeBookings,
+        paidBookings,
+        revenueData,
+        bookingStatusData,
+        categoryData,
+        availableCars: carsRes.data?.filter(c => c.available).length || 0,
       };
+    },
+  });
+
+  const { data: recentBookings } = useQuery({
+    queryKey: ['recent-bookings'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('bookings')
+        .select(`
+          *,
+          cars (brand, name),
+          profiles (full_name, email)
+        `)
+        .order('created_at', { ascending: false })
+        .limit(5);
+      
+      if (error) throw error;
+      return data;
     },
   });
 
@@ -87,6 +169,7 @@ const AdminDashboard = () => {
     {
       title: 'Fleet Size',
       value: stats?.totalCars || 0,
+      subtitle: `${stats?.availableCars || 0} available`,
       icon: Car,
       trend: '+3',
       trendUp: true,
@@ -101,6 +184,19 @@ const AdminDashboard = () => {
       color: 'bg-accent/20 text-accent-foreground',
     },
   ];
+
+  const COLORS = ['#f59e0b', '#3b82f6', '#10b981', '#6b7280', '#ef4444'];
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'confirmed': return 'bg-green-500/10 text-green-600';
+      case 'pending': return 'bg-yellow-500/10 text-yellow-600';
+      case 'active': return 'bg-blue-500/10 text-blue-600';
+      case 'completed': return 'bg-muted text-muted-foreground';
+      case 'cancelled': return 'bg-red-500/10 text-red-600';
+      default: return 'bg-muted text-muted-foreground';
+    }
+  };
 
   return (
     <div className="min-h-screen bg-muted flex">
@@ -158,9 +254,9 @@ const AdminDashboard = () => {
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1">
+      <div className="flex-1 overflow-auto">
         {/* Mobile Header */}
-        <header className="lg:hidden sticky top-0 bg-card border-b border-border p-4 flex items-center justify-between">
+        <header className="lg:hidden sticky top-0 bg-card border-b border-border p-4 flex items-center justify-between z-40">
           <button onClick={() => setSidebarOpen(!sidebarOpen)}>
             {sidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
@@ -201,41 +297,174 @@ const AdminDashboard = () => {
                     </div>
                     <p className="text-sm text-muted-foreground mb-1">{stat.title}</p>
                     <p className="text-3xl font-bold text-foreground">{stat.value}</p>
+                    {stat.subtitle && (
+                      <p className="text-xs text-muted-foreground mt-1">{stat.subtitle}</p>
+                    )}
                   </CardContent>
                 </Card>
               </motion.div>
             ))}
           </div>
 
-          {/* Quick Actions */}
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate('/admin/cars')}>
-              <CardContent className="p-6">
-                <h3 className="font-semibold text-foreground mb-2">Manage Fleet</h3>
-                <p className="text-sm text-muted-foreground mb-4">Add, edit, or remove vehicles from your fleet</p>
-                <Button variant="outline" size="sm">
-                  View Cars
-                </Button>
+          {/* Charts Row */}
+          <div className="grid lg:grid-cols-2 gap-6 mb-8">
+            {/* Revenue Chart */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-primary" />
+                  Revenue & Bookings (Last 7 Days)
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-72">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={stats?.revenueData || []}>
+                      <defs>
+                        <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
+                          <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                      <XAxis dataKey="date" className="text-muted-foreground" fontSize={12} />
+                      <YAxis className="text-muted-foreground" fontSize={12} />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: 'hsl(var(--card))', 
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '8px'
+                        }}
+                        formatter={(value: number, name: string) => [
+                          name === 'revenue' ? `$${value}` : value,
+                          name === 'revenue' ? 'Revenue' : 'Bookings'
+                        ]}
+                      />
+                      <Area 
+                        type="monotone" 
+                        dataKey="revenue" 
+                        stroke="hsl(var(--primary))" 
+                        fill="url(#colorRevenue)" 
+                        strokeWidth={2}
+                      />
+                      <Bar dataKey="bookings" fill="hsl(var(--accent))" opacity={0.5} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
               </CardContent>
             </Card>
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate('/admin/bookings')}>
-              <CardContent className="p-6">
-                <h3 className="font-semibold text-foreground mb-2">Pending Bookings</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  {stats?.pendingBookings || 0} bookings waiting for confirmation
-                </p>
-                <Button variant="outline" size="sm">
-                  View Bookings
-                </Button>
+
+            {/* Booking Status Distribution */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Activity className="w-5 h-5 text-primary" />
+                  Booking Status Distribution
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-72">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={stats?.bookingStatusData || []}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={80}
+                        paddingAngle={5}
+                        dataKey="value"
+                      >
+                        {(stats?.bookingStatusData || []).map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: 'hsl(var(--card))', 
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '8px'
+                        }}
+                      />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
               </CardContent>
             </Card>
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate('/admin/users')}>
-              <CardContent className="p-6">
-                <h3 className="font-semibold text-foreground mb-2">User Management</h3>
-                <p className="text-sm text-muted-foreground mb-4">View and manage user accounts</p>
-                <Button variant="outline" size="sm">
-                  View Users
+          </div>
+
+          {/* Second Row - Fleet Distribution & Recent Bookings */}
+          <div className="grid lg:grid-cols-3 gap-6">
+            {/* Fleet Category Distribution */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Car className="w-5 h-5 text-primary" />
+                  Fleet by Category
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={stats?.categoryData || []} layout="vertical">
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                      <XAxis type="number" fontSize={12} />
+                      <YAxis dataKey="name" type="category" fontSize={12} width={80} />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: 'hsl(var(--card))', 
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '8px'
+                        }}
+                      />
+                      <Bar dataKey="value" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Recent Bookings */}
+            <Card className="lg:col-span-2">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-primary" />
+                  Recent Bookings
+                </CardTitle>
+                <Button variant="outline" size="sm" onClick={() => navigate('/admin/bookings')}>
+                  View All
                 </Button>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {recentBookings?.map((booking: any) => (
+                    <div key={booking.id} className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                          <Calendar className="w-5 h-5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-foreground">
+                            {booking.cars?.brand} {booking.cars?.name}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {booking.profiles?.full_name || booking.profiles?.email || 'Unknown'}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold text-foreground">${booking.total_price}</p>
+                        <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(booking.status)}`}>
+                          {booking.status}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                  {!recentBookings?.length && (
+                    <p className="text-center text-muted-foreground py-8">No bookings yet</p>
+                  )}
+                </div>
               </CardContent>
             </Card>
           </div>
