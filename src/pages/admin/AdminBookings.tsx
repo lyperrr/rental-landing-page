@@ -56,7 +56,7 @@ const AdminBookings = () => {
   });
 
   const updateStatusMutation = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+    mutationFn: async ({ id, status }: { id: string; status: 'pending' | 'confirmed' | 'active' | 'completed' | 'cancelled' }) => {
       const { error } = await supabase
         .from('bookings')
         .update({ status })
