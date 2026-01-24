@@ -36,13 +36,18 @@ const Footer = () => {
           <div>
             <h4 className="font-display text-lg font-semibold mb-6">Quick Links</h4>
             <ul className="space-y-3">
-              {['Home', 'Fleet', 'Services', 'Pricing', 'Contact'].map((link) => (
-                <li key={link}>
+              {[
+                { name: 'Home', path: '/' },
+                { name: 'Fleet', path: '/fleet' },
+                { name: 'Services', path: '/services' },
+                { name: 'Contact', path: '/contact' },
+              ].map((link) => (
+                <li key={link.name}>
                   <Link
-                    to={`/${link.toLowerCase() === 'home' ? '' : link.toLowerCase()}`}
+                    to={link.path}
                     className="text-white/70 hover:text-primary transition-colors text-sm"
                   >
-                    {link}
+                    {link.name}
                   </Link>
                 </li>
               ))}

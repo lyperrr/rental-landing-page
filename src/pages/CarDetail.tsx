@@ -56,6 +56,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { format, differenceInDays, setHours, setMinutes } from 'date-fns';
 import { cn } from '@/lib/utils';
+import CarReviews from '@/components/reviews/CarReviews';
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   'user-round': UserRound,
@@ -610,6 +611,24 @@ const CarDetail = () => {
                 </div>
               </motion.div>
             </div>
+          </div>
+        </section>
+
+        {/* Reviews Section */}
+        <section className="luxury-section bg-muted/30">
+          <div className="luxury-container">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              <div className="flex items-center justify-between mb-8">
+                <h2 className="font-display text-2xl md:text-3xl font-bold text-foreground">
+                  Customer Reviews
+                </h2>
+              </div>
+              <CarReviews carId={car.id} />
+            </motion.div>
           </div>
         </section>
       </main>
