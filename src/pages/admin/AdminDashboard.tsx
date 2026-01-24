@@ -135,6 +135,7 @@ const AdminDashboard = () => {
     { name: 'Cars', path: '/admin/cars', icon: Car },
     { name: 'Bookings', path: '/admin/bookings', icon: Calendar },
     { name: 'Users', path: '/admin/users', icon: Users },
+    { name: 'Messages', path: '/admin/messages', icon: Activity },
   ];
 
   const isActive = (path: string) => {
