@@ -4,9 +4,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { 
-  Car, Calendar, User, LogOut, Settings, History, Star,
+  Car, Calendar, User, LogOut, Settings, Star,
   CreditCard, MapPin, ChevronRight, Clock, Phone, Mail,
-  Edit2, Camera, CheckCircle, AlertCircle, MessageSquare
+  Edit2, CheckCircle, AlertCircle, MessageSquare
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import Header from '@/components/layout/Header';
@@ -15,10 +15,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import ReviewForm from '@/components/reviews/ReviewForm';
+import AvatarUpload from '@/components/profile/AvatarUpload';
 
 const Dashboard = () => {
   const { user, signOut, isAdmin } = useAuth();
@@ -173,18 +173,13 @@ const Dashboard = () => {
               <Card className="sticky top-24">
                 <CardContent className="p-6">
                   <div className="text-center mb-6">
-                    <div className="relative inline-block mb-4">
-                      <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
-                        {profile?.avatar_url ? (
-                          <img 
-                            src={profile.avatar_url} 
-                            alt={profile.full_name || 'User'} 
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <User className="w-12 h-12 text-primary" />
-                        )}
-                      </div>
+                    <div className="mb-4">
+                      <AvatarUpload
+                        userId={user?.id || ''}
+                        currentAvatarUrl={profile?.avatar_url}
+                        onUploadComplete={() => refetchProfile()}
+                        size="md"
+                      />
                     </div>
                     <h3 className="font-display text-xl font-semibold">
                       {profile?.full_name || 'User'}
