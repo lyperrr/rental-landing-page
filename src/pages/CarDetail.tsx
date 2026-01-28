@@ -26,6 +26,7 @@ import {
   UserRound,
   Armchair,
   ChevronRight,
+  Share2,
 } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
@@ -57,6 +58,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { format, differenceInDays, setHours, setMinutes } from 'date-fns';
 import { cn } from '@/lib/utils';
 import CarReviews from '@/components/reviews/CarReviews';
+import FavoriteButton from '@/components/ui/FavoriteButton';
+import { toast } from 'sonner';
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   'user-round': UserRound,
@@ -262,9 +265,25 @@ const CarDetail = () => {
                     )}
                   </div>
 
-                  <h1 className="font-display text-3xl md:text-4xl font-bold text-foreground mb-2">
-                    {car.brand} {car.name}
-                  </h1>
+                  <div className="flex items-center justify-between mb-2">
+                    <h1 className="font-display text-3xl md:text-4xl font-bold text-foreground">
+                      {car.brand} {car.name}
+                    </h1>
+                    <div className="flex items-center gap-2">
+                      <FavoriteButton carId={car.id} variant="button" />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          navigator.clipboard.writeText(window.location.href);
+                          toast.success('Link copied to clipboard');
+                        }}
+                      >
+                        <Share2 className="w-4 h-4 mr-2" />
+                        Share
+                      </Button>
+                    </div>
+                  </div>
 
                   <div className="flex items-center gap-4 mb-6">
                     <div className="flex items-center gap-1">

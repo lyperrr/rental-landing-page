@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { Star, Users, Fuel, Settings2, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import FavoriteButton from '@/components/ui/FavoriteButton';
 import type { Car } from '@/lib/carData';
 
 interface CarCardProps {
@@ -32,7 +33,7 @@ const CarCard = ({ car, index = 0 }: CarCardProps) => {
             </span>
           </div>
         )}
-        <div className="absolute top-4 right-4">
+        <div className="absolute top-4 left-4">
           <span className={`px-3 py-1 rounded-full text-xs font-medium ${
             car.category === 'Luxury' 
               ? 'bg-luxury-gold text-foreground' 
@@ -40,6 +41,9 @@ const CarCard = ({ car, index = 0 }: CarCardProps) => {
           }`}>
             {car.category}
           </span>
+        </div>
+        <div className="absolute top-4 right-4">
+          <FavoriteButton carId={car.id} size="sm" />
         </div>
       </div>
 
