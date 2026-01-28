@@ -4,9 +4,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { 
-  Car, Calendar, User, LogOut, Settings, Star,
+  Car, Calendar, User, LogOut, Settings, Star, Heart,
   CreditCard, MapPin, ChevronRight, Clock, Phone, Mail,
-  Edit2, CheckCircle, AlertCircle, MessageSquare
+  Edit2, CheckCircle, AlertCircle, MessageSquare, Trash2
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import Header from '@/components/layout/Header';
@@ -19,6 +19,7 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import ReviewForm from '@/components/reviews/ReviewForm';
 import AvatarUpload from '@/components/profile/AvatarUpload';
+import { useFavorites } from '@/hooks/useFavorites';
 
 const Dashboard = () => {
   const { user, signOut, isAdmin } = useAuth();
@@ -31,6 +32,7 @@ const Dashboard = () => {
     phone: '',
     address: '',
   });
+  const { favoritesCars, isLoadingCars, removeFavorite } = useFavorites();
 
   const { data: profile, refetch: refetchProfile } = useQuery({
     queryKey: ['profile', user?.id],
@@ -213,6 +215,17 @@ const Dashboard = () => {
                     >
                       <Calendar className="w-5 h-5" />
                       My Bookings
+                    </button>
+                    <button
+                      onClick={() => setActiveTab('wishlist')}
+                      className={`flex items-center gap-3 px-4 py-3 rounded-lg w-full transition-colors ${
+                        activeTab === 'wishlist' 
+                          ? 'bg-primary/10 text-primary font-medium' 
+                          : 'text-muted-foreground hover:bg-muted'
+                      }`}
+                    >
+                      <Heart className="w-5 h-5" />
+                      Wishlist
                     </button>
                     <button
                       onClick={() => setActiveTab('profile')}
@@ -411,6 +424,102 @@ const Dashboard = () => {
                           </h3>
                           <p className="text-muted-foreground mb-6">
                             Start exploring our premium fleet and book your first luxury car
+                          </p>
+                          <Link to="/fleet">
+                            <Button size="lg">Browse Fleet</Button>
+                          </Link>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              )}
+
+              {/* Wishlist Tab */}
+              {activeTab === 'wishlist' && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                >
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Heart className="w-5 h-5 text-primary" />
+                        My Wishlist
+                      </CardTitle>
+                      <CardDescription>
+                        Cars you've saved for later
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {isLoadingCars ? (
+                        <div className="text-center py-8">
+                          <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4" />
+                          <p className="text-muted-foreground">Loading wishlist...</p>
+                        </div>
+                      ) : favoritesCars && favoritesCars.length > 0 ? (
+                        <div className="grid sm:grid-cols-2 gap-4">
+                          {favoritesCars.map((favorite: any) => (
+                            <motion.div
+                              key={favorite.id}
+                              initial={{ opacity: 0, scale: 0.95 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              className="bg-muted/50 rounded-xl overflow-hidden hover:bg-muted transition-colors"
+                            >
+                              <div className="aspect-[16/9] overflow-hidden">
+                                {favorite.cars?.image_url ? (
+                                  <img
+                                    src={favorite.cars.image_url}
+                                    alt={favorite.cars.name}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center bg-muted">
+                                    <Car className="w-12 h-12 text-muted-foreground" />
+                                  </div>
+                                )}
+                              </div>
+                              <div className="p-4">
+                                <div className="flex items-start justify-between mb-2">
+                                  <div>
+                                    <h4 className="font-semibold text-foreground">
+                                      {favorite.cars?.brand} {favorite.cars?.name}
+                                    </h4>
+                                    <p className="text-sm text-muted-foreground">
+                                      {favorite.cars?.year} • {favorite.cars?.category}
+                                    </p>
+                                  </div>
+                                  <span className="text-primary font-bold">
+                                    ${favorite.cars?.price_per_day}/day
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2 mt-3">
+                                  <Link to={`/car/${favorite.car_id}`} className="flex-1">
+                                    <Button size="sm" className="w-full">
+                                      View Details
+                                    </Button>
+                                  </Link>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => removeFavorite(favorite.car_id)}
+                                    className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                            </motion.div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-16">
+                          <Heart className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                          <h3 className="font-display text-xl font-semibold text-foreground mb-2">
+                            No saved cars yet
+                          </h3>
+                          <p className="text-muted-foreground mb-6">
+                            Start browsing our fleet and save cars you love
                           </p>
                           <Link to="/fleet">
                             <Button size="lg">Browse Fleet</Button>
