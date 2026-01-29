@@ -23,7 +23,10 @@ const navLinks = [
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
-  const { user, signOut, isAdmin } = useAuth();
+  const { user, signOut, isAdmin, isStaff } = useAuth();
+  
+  // Show admin panel for both admin and staff
+  const canAccessAdmin = isAdmin || isStaff;
 
   const handleSignOut = async () => {
     await signOut();
@@ -82,11 +85,11 @@ const Header = () => {
                       Dashboard
                     </Link>
                   </DropdownMenuItem>
-                  {isAdmin && (
+                  {canAccessAdmin && (
                     <DropdownMenuItem asChild>
                       <Link to="/admin" className="flex items-center gap-2 cursor-pointer">
                         <Car className="w-4 h-4" />
-                        Admin Panel
+                        {isAdmin ? 'Admin Panel' : 'Staff Panel'}
                       </Link>
                     </DropdownMenuItem>
                   )}
@@ -157,11 +160,11 @@ const Header = () => {
                           Dashboard
                         </Button>
                       </Link>
-                      {isAdmin && (
+                      {canAccessAdmin && (
                         <Link to="/admin" onClick={() => setIsMenuOpen(false)}>
                           <Button variant="outline" className="w-full gap-2">
                             <Car className="w-4 h-4" />
-                            Admin Panel
+                            {isAdmin ? 'Admin Panel' : 'Staff Panel'}
                           </Button>
                         </Link>
                       )}
