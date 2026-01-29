@@ -42,11 +42,11 @@ const App = () => (
             <Route path="/contact" element={<Contact />} />
             <Route path="/about" element={<About />} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>} />
-            <Route path="/admin/cars" element={<ProtectedRoute requireAdmin><AdminCars /></ProtectedRoute>} />
-            <Route path="/admin/bookings" element={<ProtectedRoute requireAdmin><AdminBookings /></ProtectedRoute>} />
+            <Route path="/admin" element={<ProtectedRoute requireStaff><AdminDashboard /></ProtectedRoute>} />
+            <Route path="/admin/cars" element={<ProtectedRoute requireStaff><AdminCars /></ProtectedRoute>} />
+            <Route path="/admin/bookings" element={<ProtectedRoute requireStaff><AdminBookings /></ProtectedRoute>} />
             <Route path="/admin/users" element={<ProtectedRoute requireAdmin><AdminUsers /></ProtectedRoute>} />
-            <Route path="/admin/messages" element={<ProtectedRoute requireAdmin><AdminMessages /></ProtectedRoute>} />
+            <Route path="/admin/messages" element={<ProtectedRoute requireStaff><AdminMessages /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

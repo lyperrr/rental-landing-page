@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
@@ -29,7 +30,7 @@ import {
 } from 'recharts';
 
 const AdminDashboard = () => {
-  const { signOut } = useAuth();
+  const { signOut, isAdmin, isStaff, userRole } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -130,13 +131,14 @@ const AdminDashboard = () => {
     navigate('/');
   };
 
+  // Navigation items - staff has limited access
   const navItems = [
-    { name: 'Overview', path: '/admin', icon: BarChart3 },
-    { name: 'Cars', path: '/admin/cars', icon: Car },
-    { name: 'Bookings', path: '/admin/bookings', icon: Calendar },
-    { name: 'Users', path: '/admin/users', icon: Users },
-    { name: 'Messages', path: '/admin/messages', icon: Activity },
-  ];
+    { name: 'Overview', path: '/admin', icon: BarChart3, adminOnly: false },
+    { name: 'Cars', path: '/admin/cars', icon: Car, adminOnly: false },
+    { name: 'Bookings', path: '/admin/bookings', icon: Calendar, adminOnly: false },
+    { name: 'Users', path: '/admin/users', icon: Users, adminOnly: true },
+    { name: 'Messages', path: '/admin/messages', icon: Activity, adminOnly: false },
+  ].filter(item => !item.adminOnly || isAdmin);
 
   const isActive = (path: string) => {
     if (path === '/admin') {
@@ -214,6 +216,11 @@ const AdminDashboard = () => {
                 Luxe<span className="text-primary">Rent</span>
               </span>
             </Link>
+            <div className="mt-3">
+              <Badge variant={isAdmin ? 'default' : 'secondary'} className="text-xs">
+                {userRole === 'admin' ? 'Administrator' : 'Staff'}
+              </Badge>
+            </div>
           </div>
 
           {/* Navigation */}
@@ -269,7 +276,7 @@ const AdminDashboard = () => {
         <main className="p-6 lg:p-8">
           <div className="mb-8">
             <h1 className="font-display text-3xl font-bold text-foreground mb-2">
-              Dashboard Overview
+              {isAdmin ? 'Admin Dashboard' : 'Staff Dashboard'}
             </h1>
             <p className="text-muted-foreground">
               Welcome back! Here's what's happening with your business.
