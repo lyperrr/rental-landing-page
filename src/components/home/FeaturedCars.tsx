@@ -5,8 +5,7 @@ import { cars } from '@/lib/carData';
 import CarCard from '@/components/ui/CarCard';
 
 const FeaturedCars = () => {
-  const rentCars = cars.filter(car => car.pricePerDay < 600).slice(0, 3);
-  const buyCars = cars.slice(0, 3);
+  const rentCars = cars.slice(0, 6);
 
   return (
     <section className="luxury-section bg-muted">
@@ -42,27 +41,6 @@ const FeaturedCars = () => {
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {rentCars.map((car, index) => (
-              <CarCard key={car.id} car={car} index={index} />
-            ))}
-          </div>
-        </div>
-
-        {/* Buy Cars Section */}
-        <div>
-          <div className="flex items-center justify-between mb-8">
-            <h3 className="font-display text-2xl font-semibold text-foreground">
-              Buy Car
-            </h3>
-            <Link 
-              to="/fleet" 
-              className="flex items-center gap-2 text-primary hover:underline text-sm font-medium"
-            >
-              See all
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {buyCars.map((car, index) => (
               <CarCard key={car.id} car={car} index={index} />
             ))}
           </div>
